@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Absensi Siswa - MDTM (Offline)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #f0f4f8; color: #222; padding-bottom: 80px; }
+  header { background: linear-gradient(135deg,#0f766e,#14b8a6); color:white; padding:16px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+  header h1 { font-size: 1.3rem; }
+  header p { font-size: .85rem; opacity:.9; margin-top:4px; }
+  nav { display:flex; background:white; position:sticky; top:0; z-index:10; box-shadow:0 2px 4px rgba(0,0,0,.08); }
+  nav button { flex:1; padding:12px; border:none; background:white; font-size:.8rem; cursor:pointer; border-bottom:3px solid transparent; font-weight:600; color:#555; }
+  nav button.active { color:#0f766e; border-color:#0f766e; }
+  .container { padding: 16px; max-width: 800px; margin: auto; }
+  .card { background:white; border-radius:12px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .card h2 { font-size:1rem; margin-bottom:12px; color:#333; }
+  input, select { width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:.95rem; margin-bottom:8px; }
+  button.btn { background:#0f766e; color:white; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:.9rem; font-weight:600; width:100%; margin-top:8px; }
+  button.btn:hover { background:#0d6e66; }
+  button.btn-danger { background:#ef4444; }
+  button.btn-success { background:#10b981; }
+  button.btn-wa { background:#25D366; }
+  button.btn-print { background:#7c3aed; }
+  button.btn-warning { background:#f59e0b; }
+  button.btn-secondary { background:#64748b; }
+  .row { display:flex; gap:8px; }
+  .row > * { flex:1; margin-top:8px; }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  th, td { padding:8px; text-align:left; border-bottom:1px solid #eee; }
+  th { background:#f9fafb; font-weight:600; color:#555; }
+  
+  .status-btns { display:flex; gap:6px; flex-wrap:wrap; }
+  .status-btn { width:42px; height:42px; border-radius:8px; border:2px solid #ddd; cursor:pointer; font-weight:bold; color:white; font-size:.95rem; display:flex; align-items:center; justify-content:center; }
+  .status-btn:active { transform: scale(0.93); }
+  .s-H { background:#10b981; border-color:#10b981; }
+  .s-I { background:#3b82f6; border-color:#3b82f6; }
+  .s-S { background:#f59e0b; border-color:#f59e0b; }
+  .s-A { background:#ef4444; border-color:#ef4444; }
+  .status-btn.selected { border-color:#111 !important; transform:scale(1.12); box-shadow:0 0 0 2px white, 0 0 0 4px #111; z-index:2; }
+  .status-btn:not(.selected) { opacity: 0.55; }
+  
+  .legend { display:flex; gap:8px; flex-wrap:wrap; font-size:.8rem; margin-bottom:12px; }
+  .legend span { padding:4px 8px; border-radius:12px; color:white; font-weight:600; }
+  .tab { display:none; }
+  .tab.active { display:block; }
+  .stat-box { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px; }
+  .stat { background:#f9fafb; padding:10px; border-radius:8px; text-align:center; }
+  .stat .num { font-size:1.3rem; font-weight:bold; color:#0f766e; }
+  .stat .lbl { font-size:.75rem; color:#666; }
+  .empty { text-align:center; padding:20px; color:#999; font-style:italic; }
+  .del-btn { background:#fee2e2; color:#dc2626; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:.8rem; }
+  .edit-btn { background:#dbeafe; color:#2563eb; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:.8rem; margin-right:4px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.75rem; font-weight:600; }
+  .badge-L { background:#dbeafe; color:#1d4ed8; }
+  .badge-P { background:#fce7f3; color:#be185d; }
+  .info-bar { background:#fef3c7; border-left:4px solid #f59e0b; padding:10px; border-radius:8px; margin-bottom:12px; font-size:.85rem; }
+  .info-bar.blue { background:#dbeafe; border-color:#3b82f6; }
+  .info-bar.red { background:#fee2e2; border-color:#ef4444; }
+  .offline-badge { background:#10b981; color:white; padding:4px 10px; border-radius:12px; font-size:.75rem; font-weight:600; display:inline-block; margin-top:6px; }
+  .status-label { font-size:.75rem; color:#666; margin-top:4px; text-align:center; }
+
+  #areaCetak { display:none; }
+  @media print {
+    body { background: white; padding: 0; }
+    header, nav, .container, .no-print { display: none !important; }
+    #areaCetak { display: block !important; padding: 20px; }
+    #areaCetak h1 { text-align:center; font-size:18px; margin-bottom:10px; }
+    #areaCetak .info { margin-bottom:15px; font-size:12px; }
+    #areaCetak table { width:100%; border-collapse:collapse; font-size:11px; }
+    #areaCetak th, #areaCetak td { border:1px solid #333; padding:6px; text-align:left; }
+    #areaCetak th { background:#0f766e; color:white; }
+    #areaCetak .footer { margin-top:30px; text-align:right; font-size:12px; }
+    #areaCetak .tanda-tangan { margin-top:60px; text-align:right; }
+    #areaCetak .tanda-tangan .nama { margin-top:60px; font-weight:bold; text-decoration:underline; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 Absensi Siswa - MDTM</h1>
+  <p id="tanggalHariIni"></p>
+  <span class="offline-badge">📴 MODE OFFLINE</span>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('siswa',this)">👥 Siswa</button>
+  <button onclick="showTab('absen',this)">✅ Absen</button>
+  <button onclick="showTab('rekap',this)">📊 Rekap</button>
+  <button onclick="showTab('cetak',this)">🖨️ Cetak</button>
+</nav>
+
+<div class="container">
+
+  <!-- TAB SISWA -->
+  <div id="siswa" class="tab active">
+    <div class="card">
+      <h2>Tambah / Edit Siswa</h2>
+      <input type="hidden" id="editId">
+      <input id="namaSiswa" placeholder="Nama siswa">
+      <div class="row">
+        <input id="kelasSiswa" placeholder="Kelas (mis. 2A)">
+        <select id="jkSiswa">
+          <option value="L">Laki-laki (L)</option>
+          <option value="P">Perempuan (P)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="simpanSiswa()" id="btnSimpan">+ Tambah Siswa</button>
+      <button class="btn btn-danger" onclick="batalEdit()" id="btnBatal" style="display:none;">Batal</button>
+      <button class="btn btn-secondary" onclick="resetDataSiswa()" style="margin-top:12px;">🔄 Kembalikan 35 Data Siswa Awal</button>
+    </div>
+    <div class="card">
+      <h2>Daftar Siswa (<span id="jmlSiswa">0</span>)</h2>
+      <div class="row" style="margin-bottom:10px;">
+        <select id="filterKelas" onchange="renderSiswa()"><option value="">Semua Kelas</option></select>
+        <select id="filterJK" onchange="renderSiswa()"><option value="">Semua JK</option><option value="L">Laki-laki</option><option value="P">Perempuan</option></select>
+      </div>
+      <table>
+        <thead><tr><th>No</th><th>Nama</th><th>JK</th><th>Kelas</th><th>Aksi</th></tr></thead>
+        <tbody id="tabelSiswa"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB ABSEN -->
+  <div id="absen" class="tab">
+    <div class="card">
+      <h2>📅 Tanggal Absensi</h2>
+      <input type="date" id="tglAbsen" onchange="renderAbsen()">
+      <div class="legend">
+        <span class="s-H">H Hadir</span><span class="s-I">I Izin</span><span class="s-S">S Sakit</span><span class="s-A">A Alpa</span>
+      </div>
+      <div class="info-bar blue">💡 Klik tombol warna untuk pilih. <b>Klik 2x</b> untuk batalkan.</div>
+      <div class="row">
+        <button class="btn btn-success" onclick="setAll('H')">✅ Semua Hadir</button>
+        <button class="btn btn-warning" onclick="resetHari()">🔄 Reset Hari Ini</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Input - <span id="tglLabel"></span></h2>
+      <div class="row" style="margin-bottom:10px;">
+        <select id="filterKelasAbsen" onchange="renderAbsen()"><option value="">Tampilkan Semua Siswa</option></select>
+      </div>
+      <table>
+        <thead><tr><th>No</th><th>Nama</th><th>JK</th><th>Status</th></tr></thead>
+        <tbody id="tabelAbsen"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB REKAP -->
+  <div id="rekap" class="tab">
+    <div class="card">
+      <h2>Filter Rekap</h2>
+      <select id="periodeRekap" onchange="renderRekap()">
+        <option value="hari">Harian</option><option value="minggu">Mingguan</option>
+        <option value="bulan" selected>Bulanan</option><option value="semester">Semester</option><option value="all">Semua</option>
+      </select>
+      <input type="date" id="tglRekap" onchange="renderRekap()">
+      <select id="filterKelasRekap" onchange="renderRekap()"><option value="">Semua Kelas</option></select>
+    </div>
+    <div class="card">
+      <div class="stat-box" id="statBox"></div>
+      <table>
+        <thead><tr><th>No</th><th>Nama</th><th>H</th><th>I</th><th>S</th><th>A</th><th>%</th></tr></thead>
+        <tbody id="tabelRekap"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB CETAK -->
+  <div id="cetak" class="tab">
+    <div class="card">
+      <h2>🖨️ Cetak / Simpan PDF</h2>
+      <div class="info-bar red">
+        ⚠️ <b>PENTING:</b> Pastikan <b>Tanggal</b> dan <b>Periode</b> di sini SAMA PERSIS dengan tanggal yang Anda isi di tab Absen.
+      </div>
+      <input id="namaSekolah" placeholder="Nama Madrasah" value="MDTM">
+      <input id="namaKelasCetak" placeholder="Kelas (kosongkan untuk semua)">
+      <select id="periodeCetak" onchange="updatePreviewCetak()">
+        <option value="bulan" selected>Bulanan</option><option value="minggu">Mingguan</option>
+        <option value="semester">Semester</option><option value="all">Semua</option>
+      </select>
+      <input type="date" id="tglCetak" onchange="updatePreviewCetak()">
+      
+      <button class="btn btn-print" onclick="siapkanCetak()">🖨️ Cetak / Simpan PDF</button>
+      <button class="btn btn-wa" onclick="kirimWA()">📱 Kirim via WhatsApp</button>
+    </div>
+    <div class="card">
+      <h2>📋 Preview Data</h2>
+      <div id="previewCetak" style="font-size:.85rem;">
+        <p style="color:#999;text-align:center;">Pilih tanggal untuk melihat preview</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- AREA CETAK (hanya muncul saat print) -->
+<div id="areaCetak">
+  <h1>REKAPITULASI ABSENSI SISWA</h1>
+  <div class="info" id="infoCetak"></div>
+  <table id="tabelCetak">
+    <thead><tr><th>No</th><th>Nama</th><th>L/P</th><th>Hadir</th><th>Izin</th><th>Sakit</th><th>Alpa</th><th>%</th></tr></thead>
+    <tbody id="bodyCetak"></tbody>
+  </table>
+  <div class="footer" id="footerCetak"></div>
+  <div class="tanda-tangan">
+    <p>Mengetahui,<br>Kepala Madrasah</p>
+    <div class="nama">Erus Kadarusman, S.Pd.I</div>
+  </div>
+</div>
+
+<script>
+const DATA_SISWA_AWAL = [
+  { nama: "Adam Faiz Al Arkhan", jk: "L" }, { nama: "Adna Azmya Adi Wiguna", jk: "P" },
+  { nama: "Aftar Rayyan Firmansyah", jk: "L" }, { nama: "Ainun Siti Nur Aisyah", jk: "P" },
+  { nama: "Almira Naira Ghina", jk: "P" }, { nama: "Anis Almahira", jk: "P" },
+  { nama: "Annasya Queena", jk: "P" }, { nama: "Arcyla Ghania Hidayat", jk: "P" },
+  { nama: "Ardan Rahsya Putra", jk: "L" }, { nama: "Arsil", jk: "L" },
+  { nama: "Asyahwa Carrisa Putri", jk: "P" }, { nama: "Ayra Nur'merrysa", jk: "P" },
+  { nama: "Azmi Daffa Arrasva", jk: "L" }, { nama: "Cantika Yumna", jk: "P" },
+  { nama: "Defran Anilian Rasman", jk: "L" }, { nama: "Ibnu Hakim Al-Fariq", jk: "L" },
+  { nama: "(Nama No.17 - silakan edit)", jk: "P" }, { nama: "Jihan Nur Andini", jk: "P" },
+  { nama: "Kanaya Indah Kirana", jk: "P" }, { nama: "(Nama No.20 - silakan edit)", jk: "L" },
+  { nama: "Muhamad Rafasya Alfarizqi", jk: "L" }, { nama: "Muhammad Azril Arifin Alrizqi", jk: "L" },
+  { nama: "Muhammad Fadly Nuron", jk: "L" }, { nama: "Muhammad Luthfi Zaidan", jk: "L" },
+  { nama: "Muhammad Raffi Argani", jk: "L" }, { nama: "Muhammad Septian Nur Alif", jk: "L" },
+  { nama: "Muhammad Thoharudin Nugr...", jk: "L" }, { nama: "Regita Aulia Rahma", jk: "P" },
+  { nama: "Salsabila Az Zahra", jk: "P" }, { nama: "Siti Aulia Nurlaila", jk: "P" },
+  { nama: "Tiara Zaina Ulfah", jk: "P" }, { nama: "Yuandi Alviansyah", jk: "L" },
+  { nama: "Yumna Arsylla Rahma", jk: "P" }, { nama: "Zildjani Nurfadillah", jk: "P" },
+  { nama: "Ziya Shakila Alula", jk: "P" }
+];
+
+let siswaData = localStorage.getItem('siswa');
+let siswa = siswaData ? JSON.parse(siswaData) : null;
+
+if (!siswa || siswa.length === 0) {
+  siswa = DATA_SISWA_AWAL.map((s, i) => ({ id: Date.now() + i, nama: s.nama, jk: s.jk, kelas: '' }));
+  save();
+}
+
+let absensi = JSON.parse(localStorage.getItem('absensi') || '{}');
+
+function save() {
+  localStorage.setItem('siswa', JSON.stringify(siswa));
+  localStorage.setItem('absensi', JSON.stringify(absensi));
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'absen') renderAbsen();
+  if (id === 'rekap') renderRekap();
+  if (id === 'cetak') updatePreviewCetak();
+}
+
+function simpanSiswa() {
+  const nama = document.getElementById('namaSiswa').value.trim();
+  const kelas = document.getElementById('kelasSiswa').value.trim();
+  const jk = document.getElementById('jkSiswa').value;
+  const editId = document.getElementById('editId').value;
+  if (!nama) return alert('Nama wajib diisi!');
+  if (editId) {
+    const s = siswa.find(x => x.id == editId);
+    if (s) { s.nama = nama; s.kelas = kelas; s.jk = jk; }
+    alert('✅ Data diupdate!');
+  } else {
+    siswa.push({ id: Date.now(), nama, kelas, jk });
+  }
+  save(); batalEdit(); renderSiswa(); updateKelasOptions();
+}
+
+function editSiswa(id) {
+  const s = siswa.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('editId').value = id;
+  document.getElementById('namaSiswa').value = s.nama;
+  document.getElementById('kelasSiswa').value = s.kelas || '';
+  document.getElementById('jkSiswa').value = s.jk || 'L';
+  document.getElementById('btnSimpan').textContent = '💾 Simpan Perubahan';
+  document.getElementById('btnBatal').style.display = 'block';
+}
+
+function batalEdit() {
+  document.getElementById('editId').value = '';
+  document.getElementById('namaSiswa').value = '';
+  document.getElementById('kelasSiswa').value = '';
+  document.getElementById('jkSiswa').value = 'L';
+  document.getElementById('btnSimpan').textContent = '+ Tambah Siswa';
+  document.getElementById('btnBatal').style.display = 'none';
+}
+
+function hapusSiswa(id) {
+  const s = siswa.find(x => x.id === id);
+  if (!confirm(`Hapus "${s.nama}"?`)) return;
+  siswa = siswa.filter(s => s.id !== id);
+  Object.keys(absensi).forEach(k => { if (k.endsWith('_' + id)) delete absensi[k]; });
+  save(); renderSiswa(); updateKelasOptions();
+}
+
+function resetDataSiswa() {
+  if (!confirm('⚠️ Yakin ingin mengembalikan 35 data siswa awal?')) return;
+  siswa = DATA_SISWA_AWAL.map((s, i) => ({ id: Date.now() + i, nama: s.nama, jk: s.jk, kelas: '' }));
+  save(); renderSiswa(); updateKelasOptions();
+  alert('✅ Data siswa berhasil dikembalikan!');
+}
+
+function renderSiswa() {
+  const fk = document.getElementById('filterKelas').value;
+  const fj = document.getElementById('filterJK').value;
+  const list = siswa.filter(s => (!fk || s.kelas === fk) && (!fj || s.jk === fj)).sort((a,b) => a.nama.localeCompare(b.nama));
+  document.getElementById('jmlSiswa').textContent = list.length;
+  const tbody = document.getElementById('tabelSiswa');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Tidak ada siswa.</td></tr>'; return; }
+  tbody.innerHTML = list.map((s,i) => `
+    <tr><td>${i+1}</td><td><b>${s.nama}</b></td><td><span class="badge badge-${s.jk}">${s.jk}</span></td><td>${s.kelas || '-'}</td>
+    <td><button class="edit-btn" onclick="editSiswa(${s.id})">✏️</button><button class="del-btn" onclick="hapusSiswa(${s.id})">🗑️</button></td></tr>`).join('');
+}
+
+function updateKelasOptions() {
+  const kelasList = [...new Set(siswa.map(s => s.kelas).filter(Boolean))].sort();
+  ['filterKelas','filterKelasAbsen','filterKelasRekap'].forEach(id => {
+    const el = document.getElementById(id);
+    const val = el.value;
+    el.innerHTML = '<option value="">Tampilkan Semua Siswa</option>' + kelasList.map(k => `<option value="${k}">${k}</option>`).join('');
+    el.value = val;
+  });
+}
+
+function renderAbsen() {
+  const tgl = document.getElementById('tglAbsen').value;
+  document.getElementById('tglLabel').textContent = tgl ? formatTanggalIndo(tgl) : '-';
+  const filter = document.getElementById('filterKelasAbsen').value;
+  const list = siswa.filter(s => !filter || s.kelas === filter).sort((a,b) => a.nama.localeCompare(b.nama));
+  const tbody = document.getElementById('tabelAbsen');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Siswa tidak muncul? Atur filter ke "Tampilkan Semua".</td></tr>'; return; }
+  tbody.innerHTML = list.map((s,i) => {
+    const key = tgl + '_' + s.id;
+    const cur = absensi[key] || '';
+    return `<tr><td>${i+1}</td><td><b>${s.nama}</b></td><td><span class="badge badge-${s.jk}">${s.jk}</span></td>
+    <td><div class="status-btns">
+      <button class="status-btn s-H ${cur==='H'?'selected':''}" onclick="setAbsen('${key}','H')">H</button>
+      <button class="status-btn s-I ${cur==='I'?'selected':''}" onclick="setAbsen('${key}','I')">I</button>
+      <button class="status-btn s-S ${cur==='S'?'selected':''}" onclick="setAbsen('${key}','S')">S</button>
+      <button class="status-btn s-A ${cur==='A'?'selected':''}" onclick="setAbsen('${key}','A')">A</button>
+    </div><div class="status-label">${cur ? 'Status: '+cur : '⚪ Belum'}</div></td></tr>`;
+  }).join('');
+}
+
+function setAbsen(key, status) {
+  const current = absensi[key] || '';
+  if (current === status) { delete absensi[key]; } else { absensi[key] = status; }
+  save(); renderAbsen();
+}
+
+function setAll(status) {
+  const tgl = document.getElementById('tglAbsen').value;
+  if (!tgl) return alert('Pilih tanggal dulu!');
+  siswa.forEach(s => { absensi[tgl + '_' + s.id] = status; });
+  save(); renderAbsen();
+}
+
+function resetHari() {
+  const tgl = document.getElementById('tglAbsen').value;
+  if (!tgl) return alert('Pilih tanggal dulu!');
+  let count = 0;
+  Object.keys(absensi).forEach(k => { if (k.startsWith(tgl + '_')) count++; });
+  if (count === 0) return alert('ℹ️ Tidak ada data pada tanggal ini.');
+  if (!confirm(`Hapus ${count} data pada ${tgl}?`)) return;
+  Object.keys(absensi).forEach(k => { if (k.startsWith(tgl + '_')) delete absensi[k]; });
+  save(); renderAbsen(); alert('✅ Data dihapus!');
+}
+
+// ===== FUNGSI REKAP & TANGGAL (ANTI-BUG TIMEZONE HP) =====
+function hitungRekap(listSiswa, tglMulai, tglAkhir) {
+  return listSiswa.map(s => {
+    let H=0,I=0,S=0,A=0,total=0;
+    Object.keys(absensi).forEach(k => {
+      const parts = k.split('_');
+      const tgl = parts[0];
+      const id = parts.slice(1).join('_');
+      if (String(id) !== String(s.id)) return;
+      if (tglMulai && tgl < tglMulai) return;
+      if (tglAkhir && tgl > tglAkhir) return;
+      const st = absensi[k];
+      if (st==='H') H++; else if (st==='I') I++; else if (st==='S') S++; else if (st==='A') A++;
+      total++;
+    });
+    return { ...s, H, I, S, A, total, pct: total ? Math.round(H/total*100) : 0 };
+  });
+}
+
+// Fungsi format tanggal lokal yang AMAN dari bug timezone
+function fmtLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatTanggalIndo(tglStr) {
+  const parts = tglStr.split('-');
+  const bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  return `${parseInt(parts[2])} ${bulan[parseInt(parts[1])-1]} ${parts[0]}`;
+}
+
+function getRange(periode, tgl) {
+  if (!tgl) return { mulai: null, akhir: null, label: 'Semua Waktu' };
+  
+  // Parse manual agar tidak terpengaruh timezone browser HP
+  const parts = tgl.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+  const bulanNama = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+  let mulai, akhir, label;
+
+  if (periode === 'hari') {
+    mulai = tgl; akhir = tgl;
+    label = formatTanggalIndo(tgl);
+  } else if (periode === 'minggu') {
+    const d = new Date(year, month - 1, day);
+    const sen = new Date(year, month - 1, day - ((d.getDay() + 6) % 7));
+    const min = new Date(year, month - 1, day + (6 - ((d.getDay() + 6) % 7)));
+    mulai = fmtLocal(sen); akhir = fmtLocal(min);
+    label = `Minggu ${formatTanggalIndo(mulai)} s/d ${formatTanggalIndo(akhir)}`;
+  } else if (periode === 'bulan') {
+    mulai = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    akhir = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    label = `${bulanNama[month-1]} ${year}`;
+  } else if (periode === 'semester') {
+    if (month <= 6) {
+      mulai = `${year}-01-01`; akhir = `${year}-06-30`; label = `Semester Genap ${year}`;
+    } else {
+      mulai = `${year}-07-01`; akhir = `${year}-12-31`; label = `Semester Ganjil ${year}`;
+    }
+  } else {
+    mulai = null; akhir = null; label = 'Semua Waktu';
+  }
+  return { mulai, akhir, label };
+}
+
+function renderRekap() {
+  const periode = document.getElementById('periodeRekap').value;
+  const tgl = document.getElementById('tglRekap').value;
+  const filter = document.getElementById('filterKelasRekap').value;
+  const list = siswa.filter(s => !filter || s.kelas === filter).sort((a,b) => a.nama.localeCompare(b.nama));
+  const { mulai, akhir } = getRange(periode, tgl);
+  const data = hitungRekap(list, mulai, akhir);
+  const totalH = data.reduce((a,b)=>a+b.H,0), totalI = data.reduce((a,b)=>a+b.I,0), totalS = data.reduce((a,b)=>a+b.S,0), totalA = data.reduce((a,b)=>a+b.A,0);
+  document.getElementById('statBox').innerHTML = `
+    <div class="stat"><div class="num" style="color:#10b981">${totalH}</div><div class="lbl">Hadir</div></div>
+    <div class="stat"><div class="num" style="color:#3b82f6">${totalI}</div><div class="lbl">Izin</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">${totalS}</div><div class="lbl">Sakit</div></div>
+    <div class="stat"><div class="num" style="color:#ef4444">${totalA}</div><div class="lbl">Alpa</div></div>`;
+  const tbody = document.getElementById('tabelRekap');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Tidak ada data absensi untuk periode ini.</td></tr>'; return; }
+  tbody.innerHTML = data.map((s,i) => `<tr><td>${i+1}</td><td><b>${s.nama}</b></td><td style="color:#10b981">${s.H}</td><td style="color:#3b82f6">${s.I}</td><td style="color:#f59e0b">${s.S}</td><td style="color:#ef4444">${s.A}</td><td><b>${s.pct}%</b></td></tr>`).join('');
+}
+
+// ===== FUNGSI CETAK & WA (DIPERBAIKI UNTUK HP) =====
+function updatePreviewCetak() {
+  const periode = document.getElementById('periodeCetak').value;
+  const tgl = document.getElementById('tglCetak').value;
+  const kelas = document.getElementById('namaKelasCetak').value;
+  
+  if (!tgl) {
+    document.getElementById('previewCetak').innerHTML = '<p style="color:#999;text-align:center;">Pilih tanggal terlebih dahulu</p>';
+    return;
+  }
+
+  const { mulai, akhir, label } = getRange(periode, tgl);
+  const list = siswa.filter(s => !kelas || s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+  const data = hitungRekap(list, mulai, akhir);
+  
+  if (data.length === 0 || data.reduce((a,b)=>a+b.total,0) === 0) {
+    document.getElementById('previewCetak').innerHTML = `
+      <div style="border:1px solid #ef4444;padding:15px;border-radius:8px;background:#fef2f2;color:#991b1b;">
+        <p style="text-align:center;font-weight:bold;">⚠️ TIDAK ADA DATA</p>
+        <p style="text-align:center;font-size:.8rem;">Tidak ditemukan data absensi untuk periode: <b>${label}</b>.</p>
+        <p style="text-align:center;font-size:.8rem;margin-top:8px;">Pastikan tanggal di sini SAMA dengan tanggal yang Anda isi di tab "Absen".</p>
+      </div>`;
+    return;
+  }
+
+  const jmlL = data.filter(s => s.jk === 'L').length;
+  const jmlP = data.filter(s => s.jk === 'P').length;
+  const sekolah = document.getElementById('namaSekolah').value || 'MDTM';
+
+  document.getElementById('previewCetak').innerHTML = `
+    <div style="border:1px solid #10b981;padding:15px;border-radius:8px;background:#f0fdf4;">
+      <h3 style="text-align:center;color:#0f766e;">✅ DATA DITEMUKAN</h3>
+      <p><b>Madrasah:</b> ${sekolah}</p>
+      <p><b>Kelas:</b> ${kelas || 'Semua'}</p>
+      <p><b>Periode:</b> ${label}</p>
+      <p><b>Total Siswa:</b> ${data.length} (L:${jmlL}, P:${jmlP})</p>
+      <p><b>Total Absen:</b> H:${data.reduce((a,b)=>a+b.H,0)} | I:${data.reduce((a,b)=>a+b.I,0)} | S:${data.reduce((a,b)=>a+b.S,0)} | A:${data.reduce((a,b)=>a+b.A,0)}</p>
+    </div>`;
+}
+
+function siapkanCetak() {
+  const sekolah = document.getElementById('namaSekolah').value || 'MDTM';
+  const kelas = document.getElementById('namaKelasCetak').value;
+  const periode = document.getElementById('periodeCetak').value;
+  const tgl = document.getElementById('tglCetak').value;
+  
+  if (!tgl) { alert('⚠️ Harap pilih tanggal terlebih dahulu!'); return; }
+
+  const { mulai, akhir, label } = getRange(periode, tgl);
+  const list = siswa.filter(s => !kelas || s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+  const data = hitungRekap(list, mulai, akhir);
+  
+  if (data.length === 0 || data.reduce((a,b)=>a+b.total,0) === 0) { 
+    alert(`⚠️ TIDAK ADA DATA!\n\nTidak ditemukan data absensi untuk periode: ${label}.\n\nPastikan Anda sudah mengabsen siswa di tab "Absen" pada tanggal yang sama.`); 
+    return; 
+  }
+
+  const jmlL = data.filter(s => s.jk === 'L').length;
+  const jmlP = data.filter(s => s.jk === 'P').length;
+  
+  document.getElementById('infoCetak').innerHTML = `<p><b>Madrasah:</b> ${sekolah}</p><p><b>Kelas:</b> ${kelas || 'Semua'}</p><p><b>Periode:</b> ${label}</p><p><b>L:</b> ${jmlL} | <b>P:</b> ${jmlP} | <b>Total:</b> ${data.length}</p>`;
+  document.getElementById('bodyCetak').innerHTML = data.map((s,i) => `<tr><td>${i+1}</td><td>${s.nama}</td><td>${s.jk}</td><td>${s.H}</td><td>${s.I}</td><td>${s.S}</td><td>${s.A}</td><td>${s.pct}%</td></tr>`).join('');
+  document.getElementById('footerCetak').innerHTML = `<p><b>Total:</b> H:${data.reduce((a,b)=>a+b.H,0)} | I:${data.reduce((a,b)=>a+b.I,0)} | S:${data.reduce((a,b)=>a+b.S,0)} | A:${data.reduce((a,b)=>a+b.A,0)}</p>`;
+  
+  // Langsung print tanpa setTimeout (lebih stabil di HP)
+  window.print();
+}
+
+async function kirimWA() {
+  const sekolah = document.getElementById('namaSekolah').value || 'MDTM';
+  const kelas = document.getElementById('namaKelasCetak').value || 'Semua Kelas';
+  const periode = document.getElementById('periodeCetak').value;
+  const tgl = document.getElementById('tglCetak').value;
+  if (!tgl) { alert('⚠️ Harap pilih tanggal terlebih dahulu!'); return; }
+  
+  const { mulai, akhir, label } = getRange(periode, tgl);
+  const list = siswa.filter(s => !kelas || s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+  const data = hitungRekap(list, mulai, akhir);
+  
+  if (data.length === 0 || data.reduce((a,b)=>a+b.total,0) === 0) { 
+    alert('⚠️ Tidak ada data absensi untuk dikirim. Silakan isi absensi dulu atau cek tanggalnya.'); 
+    return; 
+  }
+
+  const jmlL = data.filter(s => s.jk === 'L').length;
+  const jmlP = data.filter(s => s.jk === 'P').length;
+  
+  let txt = `*REKAP ABSENSI*\n🏫 ${sekolah}\n📚 ${kelas}\n📅 ${label}\n👦 L:${jmlL} 👧 P:${jmlP}\n\n`;
+  data.forEach((s,i) => { txt += `${i+1}. *${s.nama}* | H:${s.H} I:${s.I} S:${s.S} A:${s.A} (${s.pct}%)\n`; });
+  txt += `\nTotal: ${data.length} siswa`;
+  
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Rekap Absensi', text: txt }); return; } catch(e) {}
+  }
+  try { await navigator.clipboard.writeText(txt); alert('✅ Teks berhasil disalin!\n\nSilakan "Tempel/Paste" manual di WhatsApp.\n\nKlik OK untuk membuka WhatsApp.'); } catch(e) {}
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}`, '_blank');
+}
+
+// INIT
+document.getElementById('tanggalHariIni').textContent = formatTanggalIndo(fmtLocal(new Date()));
+document.getElementById('tglAbsen').value = fmtLocal(new Date());
+document.getElementById('tglRekap').value = fmtLocal(new Date());
+document.getElementById('tglCetak').value = fmtLocal(new Date());
+renderSiswa(); updateKelasOptions();
+updatePreviewCetak();
+</script>
+</body>
+</html>
